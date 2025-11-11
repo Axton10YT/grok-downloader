@@ -1,15 +1,24 @@
 export default {
   async fetch(request) {
-    const fileUrl = 'https://axton10yt.github.io/grok-downloader/Grok%20Setup%201.0.0.exe';
+    const repo = 'Axton10YT/grok-downloader';
+    const apiUrl = `https://api.github.com/repos/${repo}/releases/latest`;
 
-    const response = await fetch(fileUrl);
-
-    return new Response(response.body, {
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': 'attachment; filename="Grok Setup 1.0.0.exe"',
-        'Content-Length': response.headers.get('Content-Length')
-      }
+    const releaseRes = await fetch(apiUrl, {
+      headers: { 'User-Agent': 'Grok-Worker' }
     });
+
+    if (!releaseRes.ok) {
+      return new Response('Failed to fetch latest release info', { status: 500 });
+    }
+
+    const releaseData = await releaseRes.json();
+    const asset = releaseData.assets.find(a => a.name.endsWith('.exe'));
+
+    if (!asset) {
+      return new Response('No installer found in latest release.', { status: 404 });
+    }
+
+    return Response.redirect(asset.browser_download_url, 302);
   }
 }
+
